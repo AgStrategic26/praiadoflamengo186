@@ -123,6 +123,8 @@ input,select{min-height:56px;padding:0 16px;border:1px solid #BFA88A;background:
 form .btn{background:var(--mar);color:var(--latao-claro);border:0;min-height:60px}
 form .btn:hover{background:#4E3626}
 .aviso{font-size:15px;line-height:1.5;color:#6E5A49;text-transform:none;letter-spacing:0;font-weight:400}
+.erro{background:#F6E0DA;color:#7A2414;padding:16px 18px;font-size:18px}
+form{position:relative}
 .ok{background:#E3EEDF;color:#1F4A2B;padding:16px 18px;font-size:18px}
 
 footer{background:var(--mar-fundo);color:#CDB9A2;font-size:15px;line-height:1.6}
@@ -323,7 +325,9 @@ footer b{color:var(--texto)}
         </select>
       </label>
       <button class="btn" type="submit">Quero receber o book</button>
+      <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
       <p class="ok" id="ok" hidden>Cadastro recebido. Em breve a corretora Andrea Gonçalves entra em contato pelo WhatsApp.</p>
+      <p class="erro" id="erro" hidden>Não foi possível enviar agora. Tente de novo ou chame a Andrea no WhatsApp: (21) 98172-8823.</p>
       <span class="aviso">Ao enviar, você concorda em receber contato sobre este empreendimento.</span>
     </form>
   </div>
@@ -344,10 +348,34 @@ footer b{color:var(--texto)}
 <script>
 document.getElementById('form-vip').addEventListener('submit', function (e) {
   e.preventDefault();
-  var nome = document.getElementById('nome'), tel = document.getElementById('whatsapp');
+  var f = this, nome = document.getElementById('nome'), tel = document.getElementById('whatsapp');
+  var email = document.getElementById('email'), interesse = document.getElementById('interesse');
+  var btn = f.querySelector('button[type=submit]'), ok = document.getElementById('ok'), erro = document.getElementById('erro');
   if (!nome.value.trim()) { nome.focus(); return; }
   if (tel.value.replace(/\D/g, '').length < 10) { tel.focus(); return; }
-  document.getElementById('ok').hidden = false;
+  if (f._gotcha && f._gotcha.value) { return; }
+  btn.disabled = true; btn.textContent = 'Enviando...'; erro.hidden = true;
+  fetch('https://formsubmit.co/ajax/oliveiraandreagoncalves@gmail.com', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({
+      _subject: 'Novo lead - Praia do Flamengo: ' + nome.value.trim(),
+      _template: 'table',
+      _captcha: 'false',
+      Nome: nome.value.trim(),
+      WhatsApp: tel.value.trim(),
+      'E-mail': email.value.trim() || 'Não informado',
+      Interesse: interesse.value,
+      Origem: 'Landing page Praia do Flamengo'
+    })
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && (d.success === true || d.success === 'true')) {
+      f.querySelectorAll('label, button').forEach(function (el) { el.hidden = true; });
+      ok.hidden = false;
+    } else { throw new Error('falha'); }
+  }).catch(function () {
+    erro.hidden = false; btn.disabled = false; btn.textContent = 'Quero receber o book';
+  });
 });
 </script>
 
