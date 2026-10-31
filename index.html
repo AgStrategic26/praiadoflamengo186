@@ -436,5 +436,45 @@ document.getElementById('form-vip').addEventListener('submit', function (e) {
 });
 </script>
 
+<!-- Medição (Google Analytics 4): carrega só depois do aceite de cookies -->
+<div id="ck-aviso" hidden role="dialog" aria-label="Aviso de cookies" style="position:fixed;left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:9999;max-width:520px;margin:0 auto;background:#fff;color:#222;border:1px solid #ddd;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:16px 18px;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;text-align:center">
+  <p style="margin:0 0 12px"><b>Usamos cookies</b> para medir as visitas e melhorar o atendimento. Você pode aceitar ou recusar.</p>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button type="button" id="ck-sim" style="cursor:pointer;padding:10px 20px;border-radius:6px;border:1px solid #222;background:#222;color:#fff;font:inherit">Aceitar</button>
+    <button type="button" id="ck-nao" style="cursor:pointer;padding:10px 20px;border-radius:6px;border:1px solid #222;background:#fff;color:#222;font:inherit">Recusar</button>
+  </div>
+</div>
+<script>
+(function(){
+  var GA4_ID='G-TM2EZ6Q4BF', CHAVE='pf186-cookies', medindo=false;
+  function carrega(){
+    if(medindo) return; medindo=true;
+    var s=document.createElement('script'); s.async=true; s.src='https://www.googletagmanager.com/gtag/js?id='+GA4_ID; document.head.appendChild(s);
+    window.dataLayer=window.dataLayer||[]; window.gtag=function(){dataLayer.push(arguments);}; gtag('js',new Date()); gtag('config',GA4_ID);
+  }
+  function evento(nome,dados){ try{ if(medindo&&window.gtag) gtag('event',nome,dados||{}); }catch(e){} }
+  // Clique em qualquer link de WhatsApp (inclusive os criados depois pela página)
+  document.addEventListener('click',function(ev){
+    var a=ev.target&&ev.target.closest?ev.target.closest('a[href*="wa.me"],a[href*="whatsapp.com"]'):null;
+    if(a) evento('contato_whatsapp',{origem:(a.getAttribute('aria-label')||a.textContent||'').trim().slice(0,60),pagina:location.pathname});
+  },true);
+  // Formulário: conta o lead quando o envio para o FormSubmit é disparado (já passou pela validação)
+  if(window.fetch){
+    var f0=window.fetch;
+    window.fetch=function(url){
+      try{ if(String(url&&url.url||url).indexOf('formsubmit.co')>-1) evento('generate_lead',{pagina:location.pathname}); }catch(e){}
+      return f0.apply(this,arguments);
+    };
+  }
+  var escolha=null; try{ escolha=localStorage.getItem(CHAVE); }catch(e){}
+  if(escolha==='sim'){ carrega(); return; }
+  if(escolha==='nao') return;
+  var c=document.getElementById('ck-aviso'); c.hidden=false;
+  function salva(v){ try{ localStorage.setItem(CHAVE,v); }catch(e){} c.hidden=true; }
+  document.getElementById('ck-sim').onclick=function(){ salva('sim'); carrega(); };
+  document.getElementById('ck-nao').onclick=function(){ salva('nao'); };
+})();
+</script>
+
 </body>
 </html>
